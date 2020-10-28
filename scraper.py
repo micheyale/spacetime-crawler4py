@@ -1,18 +1,39 @@
 import re
 from urllib.parse import urlparse
+import requests
+import validators
+from bs4 import BeautifulSoup
 
 def scraper(url, resp):
+
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp):
-    # Implementation requred.
-    return list()
+    lst = []
+    print("HI",resp)
+    page = requests.get(url)
+    bSoup = BeautifulSoup(page.content,'html.parser')
+    links_lst = bSoup.find_all('a')
+    for link in links_lst:
+        if 'href' in link.attrs and is_valid(url):
+            lst.append(link.attrs['href'])
+    return lst
 
+#checks to see if the website is active and exists ie 200 status code
+#need to "pip install validators" for it to work
+def web_exists(url): 
+    check = validators.url(url)
+    if(check == False):
+        return False;
+    return True;
 def is_valid(url):
+
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
+            return False
+        if not web_exists(url):
             return False
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
