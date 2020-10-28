@@ -11,7 +11,6 @@ def scraper(url, resp):
 
 def extract_next_links(url, resp):
     lst = []
-    print("HI",resp)
     page = requests.get(url)
     bSoup = BeautifulSoup(page.content,'html.parser')
     links_lst = bSoup.find_all('a')
