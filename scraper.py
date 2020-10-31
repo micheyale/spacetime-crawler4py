@@ -12,11 +12,37 @@ def scraper(url, resp):
 def extract_next_links(url, resp):
     lst = []
     page = requests.get(url)
-    bSoup = BeautifulSoup(page.content,'html.parser')
-    links_lst = bSoup.find_all('a')
-    for link in links_lst:
-        if 'href' in link.attrs and is_valid(url):
-            lst.append(link.attrs['href'])
+    lst = []
+    #add 404 checking raw_respons
+    # regex for "https?:// [any str of characters] ics.uci.edu"
+    # if theres a match add it to ics_subdomain_dict then look at it's
+    # path, if that path doesn't appear in path_dict increment the value of ics_subdomain_dict[match]
+    # else do not add it 
+
+    if resp.status == 200:
+        page = requests.get(url)
+        bSoup = BeautifulSoup(page.content,'html.parser')
+        links_lst = bSoup.find_all('a')
+        for link in links_lst:
+            if 'href' in link.attrs and is_valid(url):
+                check_pages = re.findall('^https?://[^#]+',link.attrs['href'])
+                check_ics_subdomain =  re.findall('^https?://[https?:// [any str of characters] ics.uci.edu]',link.attrs['href'])
+                print("ICS SUBDOMAIN: ",check_ics_subdomain)
+                if check_ics_subdomain: # if there was a match
+                    if check_ics_subdomain[0] not in ics_subdomain_dict:
+                        ics_subdomain_dict[check_ics_subdomain[0]] = 1 # so far there has been one occurance of it
+                        #add the entire link to path_dict
+                    else: # it is in there so we need to figure out if we have to increment its page
+                        if link.attrs['href'] not in path_dict:
+                            path_dict[link.attrs['href']] = 1 
+                            ics_subdomain_dict[check_ics_subdomain[0]] += 1                       
+                    
+
+                if check_pages:
+                    domain_set.add(check_pages[0])
+                              
+                lst.append(link.attrs['href'])       
+
     return lst
 
 #checks to see if the website is active and exists ie 200 status code
