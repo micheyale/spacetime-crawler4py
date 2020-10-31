@@ -3,15 +3,15 @@ from urllib.parse import urlparse
 import requests
 import validators
 from bs4 import BeautifulSoup
-domain_set = set() # len of set would be the answer
-path_dict = {}
-ics_subdomain_dict = dict()
-
-
 from bs4 import BeautifulSoup
 from bs4.element import Comment
 import urllib.request
+import tokenizer
 
+domain_set = set() # len of set would be the answer
+path_dict = {}
+ics_subdomain_dict = dict()
+tokenDict = {}
 
 def tag_visible(element):
     if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
@@ -20,22 +20,18 @@ def tag_visible(element):
         return False
     return True
 
-
 def text_from_html(body):
     soup = BeautifulSoup(body, 'html.parser')
     texts = soup.findAll(text=True)
-    visible_texts = filter(tag_visible, texts)  
+    visible_texts = filter(tag_visible, texts)
     return u" ".join(t.strip() for t in visible_texts)
 
-
-
 def scraper(url, resp):
-
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp):
-    lst = []
+    extractedLinks = []
     #add 404 checking raw_respons
     # regex for "https?:// [any str of characters] ics.uci.edu"
     # if theres a match add it to ics_subdomain_dict then look at it's
@@ -48,17 +44,20 @@ def extract_next_links(url, resp):
     # get out of calenders
     # find longest page -- count word on a page not including stop words
     # figure out how to back out of a page if it's low in content
-    
-    
+
     if resp.status == 200:
         html = urllib.request.urlopen(url).read()
-        #we need to tokenize html 
+        bodyText = text_from_html(html)
+        tokenizer.updateTokenCounts(tokenDict, bodyText)
+
         page = requests.get(url)
         bSoup = BeautifulSoup(page.content,'html.parser')
         links_lst = bSoup.find_all('a')
+
         for link in links_lst:
             if 'href' in link.attrs and is_valid(url) and 'uci.edu' in link.attrs['href']: #may need to change 'uci.edu' to regex?
-                check_pages = re.findall('^https?://[^#]+',link.attrs['href'])
+                check_pages = re.findall('^https?://[^#]+', link.attrs['href'])
+
                 check_ics_subdomain =  re.findall('^http?://[^/]+',link.attrs['href'])
                 if check_ics_subdomain and 'ics.uci.edu' in check_ics_subdomain[0]: # if there was a match
                     if check_ics_subdomain[0] not in ics_subdomain_dict:
@@ -66,26 +65,30 @@ def extract_next_links(url, resp):
                         #add the entire link to path_dict
                     else: # it is in there so we need to figure out if we have to increment its page
                         if link.attrs['href'] not in path_dict:
-                            path_dict[link.attrs['href']] = 1 
-                            ics_subdomain_dict[check_ics_subdomain[0]] += 1                       
-                    
+                            path_dict[link.attrs['href']] = 1
+                            ics_subdomain_dict[check_ics_subdomain[0]] += 1
+
 
                 if check_pages:
                     domain_set.add(check_pages[0])
-                              
-                lst.append(link.attrs['href'])       
-    print(ics_subdomain_dict)
-    return lst
+
+                link = link.attrs['href']
+                if is_valid(link):
+                    extractedLinks.append(link.replace(" ", ""))
+
+    #print("SUBDOMAINS: " + str(ics_subdomain_dict))
+    print(" ")
+    return extractedLinks
 
 #checks to see if the website is active and exists ie 200 status code
 #need to "pip install validators" for it to work
-def web_exists(url): 
+def web_exists(url):
     check = validators.url(url)
     if(check == False):
-        return False;
-    return True;
-def is_valid(url):
+        return False
+    return True
 
+def is_valid(url):
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):

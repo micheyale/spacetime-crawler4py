@@ -12,10 +12,12 @@ class Worker(Thread):
         self.config = config
         self.frontier = frontier
         super().__init__(daemon=True)
-        
+
     def run(self):
         while True:
             tbd_url = self.frontier.get_tbd_url()
+            if tbd_url: #DEBUG
+                print("TBD URL: " + tbd_url)
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 break

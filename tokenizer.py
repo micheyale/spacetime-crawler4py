@@ -8,8 +8,8 @@ import re
 #				if token is found it is added to list
 def getTokens(string: str) -> list:
 	tokens = []
+	cleanLine = re.split("\W+", string)
 
-	cleanLine = re.split("\W+", line)
 	for word in cleanLine:
 		if word.isalnum() == True:
 			tokens.append(word.lower())
@@ -40,5 +40,5 @@ def printFreqs(freqs: dict) -> None:
 # description:	entry point. find tokens, build frequency dict, then
 #				sort and print frequency list. bound by printFreqs()
 def updateTokenCounts(tokenDict: dict, bodyText: str):
-	tokens = getTokens(sys.argv[1])
+	tokens = getTokens(bodyText)
 	freqs = computeWordFrequencies(tokenDict, tokens)
