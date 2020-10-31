@@ -32,18 +32,6 @@ def scraper(url, resp):
 
 def extract_next_links(url, resp):
     extractedLinks = []
-    #add 404 checking raw_respons
-    # regex for "https?:// [any str of characters] ics.uci.edu"
-    # if theres a match add it to ics_subdomain_dict then look at it's
-    # path, if that path doesn't appear in path_dict increment the value of ics_subdomain_dict[match]
-    # else do not add it
-    # https://wics.ics.uci.edu/wics-fall-quarter-week-9-casino-night
-    # https://wics.ics.uci.edu/wics-spring-quarter-week-7-slalom-tour/?share=google-plus-1
-    # to do
-    #=============
-    # get out of calenders
-    # find longest page -- count word on a page not including stop words
-    # figure out how to back out of a page if it's low in content
 
     if resp.status == 200:
         html = urllib.request.urlopen(url).read()
@@ -52,29 +40,12 @@ def extract_next_links(url, resp):
 
         page = requests.get(url)
         bSoup = BeautifulSoup(page.content,'html.parser')
-        links_lst = bSoup.find_all('a')
+        allTags = bSoup.find_all('a')
 
-        for link in links_lst:
-            if 'href' in link.attrs and is_valid(url) and 'uci.edu' in link.attrs['href']: #may need to change 'uci.edu' to regex?
-                check_pages = re.findall('^https?://[^#]+', link.attrs['href'])
-
-                check_ics_subdomain =  re.findall('^http?://[^/]+',link.attrs['href'])
-                if check_ics_subdomain and 'ics.uci.edu' in check_ics_subdomain[0]: # if there was a match
-                    if check_ics_subdomain[0] not in ics_subdomain_dict:
-                        ics_subdomain_dict[check_ics_subdomain[0]] = 1 # so far there has been one occurance of it
-                        #add the entire link to path_dict
-                    else: # it is in there so we need to figure out if we have to increment its page
-                        if link.attrs['href'] not in path_dict:
-                            path_dict[link.attrs['href']] = 1
-                            ics_subdomain_dict[check_ics_subdomain[0]] += 1
-
-
-                if check_pages:
-                    domain_set.add(check_pages[0])
-
-                link = link.attrs['href']
-                if is_valid(link):
-                    extractedLinks.append(link.replace(" ", ""))
+        for tag in allTags:
+            if 'href'in tag.attrs and 'uci.edu' in tag.attrs['href']:
+                extractedLink = tag.attrs['href']
+                extractedLinks.append(extractedLink)
 
     #print("SUBDOMAINS: " + str(ics_subdomain_dict))
     print(" ")
