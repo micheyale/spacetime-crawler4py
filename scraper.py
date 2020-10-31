@@ -7,6 +7,28 @@ domain_set = set() # len of set would be the answer
 path_dict = {}
 ics_subdomain_dict = dict()
 
+
+from bs4 import BeautifulSoup
+from bs4.element import Comment
+import urllib.request
+
+
+def tag_visible(element):
+    if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
+        return False
+    if isinstance(element, Comment):
+        return False
+    return True
+
+
+def text_from_html(body):
+    soup = BeautifulSoup(body, 'html.parser')
+    texts = soup.findAll(text=True)
+    visible_texts = filter(tag_visible, texts)  
+    return u" ".join(t.strip() for t in visible_texts)
+
+
+
 def scraper(url, resp):
 
     links = extract_next_links(url, resp)
@@ -18,11 +40,20 @@ def extract_next_links(url, resp):
     # regex for "https?:// [any str of characters] ics.uci.edu"
     # if theres a match add it to ics_subdomain_dict then look at it's
     # path, if that path doesn't appear in path_dict increment the value of ics_subdomain_dict[match]
-    # else do not add it 
+    # else do not add it
+    # https://wics.ics.uci.edu/wics-fall-quarter-week-9-casino-night
+    # https://wics.ics.uci.edu/wics-spring-quarter-week-7-slalom-tour/?share=google-plus-1
+    # to do
+    #=============
+    # get out of calenders
+    # find longest page -- count word on a page not including stop words
+    # figure out how to back out of a page if it's low in content
+    
     
     if resp.status == 200:
+        html = urllib.request.urlopen(url).read()
+        #we need to tokenize html 
         page = requests.get(url)
-
         bSoup = BeautifulSoup(page.content,'html.parser')
         links_lst = bSoup.find_all('a')
         for link in links_lst:
