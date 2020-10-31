@@ -3,12 +3,13 @@
 import sys
 import re
 
+tokenMatch = re.compile("\W+")
 # runtime: linear O(n) where n is number of tokens in a text file
 # description:	each line of a file is grabbed then iterated over,
 #				if token is found it is added to list
 def getTokens(string: str) -> list:
 	tokens = []
-	cleanLine = re.split("\W+", string)
+	cleanLine = tokenMatch.split(string)
 
 	for word in cleanLine:
 		if word.isalnum() == True:

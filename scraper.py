@@ -1,7 +1,6 @@
 import re
 from urllib.parse import urlparse
 import requests
-import validators
 from bs4 import BeautifulSoup
 from bs4 import BeautifulSoup
 from bs4.element import Comment
@@ -20,8 +19,7 @@ def tag_visible(element):
         return False
     return True
 
-def text_from_html(body):
-    soup = BeautifulSoup(body, 'html.parser')
+def text_from_html(body, soup):
     texts = soup.findAll(text=True)
     visible_texts = filter(tag_visible, texts)
     return u" ".join(t.strip() for t in visible_texts)
@@ -34,16 +32,16 @@ def extract_next_links(url, resp):
     extractedLinks = []
 
     if resp.status == 200:
-        html = urllib.request.urlopen(url).read()
-        bodyText = text_from_html(html)
+        soup = BeautifulSoup(resp.raw_response.text,'html.parser')
+        bodyText = text_from_html(resp.raw_response.text, soup)
         tokenizer.updateTokenCounts(tokenDict, bodyText)
+        #print(str(tokenDict["department"]))
 
-        page = requests.get(url)
-        bSoup = BeautifulSoup(page.content,'html.parser')
-        allTags = bSoup.find_all('a')
+        allTags = soup.find_all('a')
 
         for tag in allTags:
             if 'href'in tag.attrs and 'uci.edu' in tag.attrs['href']:
+
                 extractedLink = tag.attrs['href']
                 extractedLinks.append(extractedLink)
 
@@ -51,21 +49,12 @@ def extract_next_links(url, resp):
     print(" ")
     return extractedLinks
 
-#checks to see if the website is active and exists ie 200 status code
-#need to "pip install validators" for it to work
-def web_exists(url):
-    check = validators.url(url)
-    if(check == False):
-        return False
-    return True
-
 def is_valid(url):
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        if not web_exists(url):
-            return False
+
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
