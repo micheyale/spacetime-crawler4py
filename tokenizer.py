@@ -3,13 +3,14 @@
 import sys
 import re
 
+tokenMatch = re.compile("\W+")
 # runtime: linear O(n) where n is number of tokens in a text file
 # description:	each line of a file is grabbed then iterated over,
 #				if token is found it is added to list
 def getTokens(string: str) -> list:
 	tokens = []
+	cleanLine = tokenMatch.split(string)
 
-	cleanLine = re.split("\W+", line)
 	for word in cleanLine:
 		if word.isalnum() == True:
 			tokens.append(word.lower())
@@ -40,5 +41,5 @@ def printFreqs(freqs: dict) -> None:
 # description:	entry point. find tokens, build frequency dict, then
 #				sort and print frequency list. bound by printFreqs()
 def updateTokenCounts(tokenDict: dict, bodyText: str):
-	tokens = getTokens(sys.argv[1])
+	tokens = getTokens(bodyText)
 	freqs = computeWordFrequencies(tokenDict, tokens)
