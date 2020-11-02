@@ -11,6 +11,7 @@ path_dict = {}
 ics_subdomain_dict = dict()
 common_word = {}
 tokenDict = {}
+trap_url = []
 
 
 
@@ -56,7 +57,9 @@ def extract_next_links(url, resp):
         
             if 'href' in link.attrs:
                 missing_domain_check = result + link.attrs['href']
-                              
+                
+                    
+                
                 in_domain = re.search('https?://([a-z0-9]+[.])*uci[.]edu((\/\w+)*\/)?',link.attrs['href'])
                 also_in_domain = re.search('https?://([a-z0-9]+[.])*uci[.]edu((\/\w+)*\/)?',missing_domain_check)
                 current_link = link.attrs['href']
@@ -66,7 +69,8 @@ def extract_next_links(url, resp):
                         current_link = missing_domain_check
         
                 
-                if in_domain or also_in_domain and is_valid(current_link):
+                if in_domain or also_in_domain and is_valid(current_link) and current_link.rsplit('/',1)[0] in trap_url:
+                    
                        
                     if '#' in current_link:
                         current_link = current_link.split('#')[0]
@@ -74,6 +78,7 @@ def extract_next_links(url, resp):
                     try:
                         check = requests.get(current_link)                    
                         if current_link not in path_dict and check.status_code == 200:
+                            print(current_link)
                             lst.append(current_link)
                             path_dict[current_link] = 1
                             
@@ -82,7 +87,9 @@ def extract_next_links(url, resp):
                             if ct[-1].isdigit():
                                 check_trap.append(ct[-1])
                                 if len(check_trap) == 2 and abs(int(check_trap[0]) - int(check_trap[1])) == 1:
-                                    continue #I NEED HELP WITH THIS
+                                    trap_url.append(ct[0])
+                                    check_trap = []
+                                    
                                 elif len(check_trap) == 2 and abs(int(check_trap[0]) - int(check_trap[1])) != 1:
                                     check_trap = []  
                             else:
