@@ -94,7 +94,7 @@ def extract_next_links(url, resp):
                             path_dict[current_link] = 1
 
                             no_path = current_link.rsplit('/') #grabs 'https://mswe.ics.uci.edu' from 'https://mswe.ics.uci.edu/faq/' for ics dict
-                            no_path = ['/'.join(no_path[0:3])][0]
+                            no_path = 'http:/' + ['/'.join(no_path[1:3])][0]
 
                             if '.ics.uci.edu' in no_path:
                                 if no_path not in ics_subdomain_dict:
@@ -105,7 +105,7 @@ def extract_next_links(url, resp):
 
                     except requests.ConnectionError:
                         print(current_link, " is not a valid website.")
-                       
+)                
     print(sum(average)/len(average))
     print("LONGEST PAGE: ",longest_page)
     return lst
