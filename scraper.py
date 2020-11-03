@@ -16,6 +16,8 @@ longest_page = ("",0)
 
 average = []
 
+
+
 def tag_visible(element):
     if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
         return False
@@ -23,16 +25,21 @@ def tag_visible(element):
         return False
     return True
 
+
 def text_from_html(body):
     soup = BeautifulSoup(body, 'html.parser')
     texts = soup.findAll(text=True)
     visible_texts = filter(tag_visible, texts)  
     return u" ".join(t.strip() for t in visible_texts)
 
+
+
 def scraper(url, resp):
 
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
+
+
 
 def extract_next_links(url, resp):
     lst = []
@@ -42,13 +49,13 @@ def extract_next_links(url, resp):
         html = urllib.request.urlopen(url).read()
         bodyText = text_from_html(html)
         tokenizer.updateTokenCounts(tokenDict, bodyText)
-        
+
         page = requests.get(url,auth=('user', 'pass'))
         bSoup = BeautifulSoup(page.content,'html.parser')
         links_lst = bSoup.find_all('a')
         parsed_uri = urlparse(url)
         result = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
-        
+
         word_count = sum(tokenDict[d] for d in tokenDict if d.isalpha())
         print("WORD COUNT: ",word_count)
         if word_count > longest_page[1]:
@@ -68,32 +75,37 @@ def extract_next_links(url, resp):
                     if len(link.attrs['href']) >= 1 and link.attrs['href'][0] == '/':
                         current_link = missing_domain_check
                     else:
-                        also_in_domain = False           
+                        also_in_domain = False
+                if '#' in current_link:
+                    current_link = current_link.split('#')[0]
+                    print("LINK HAS BEEN DEFRAGGED: ",current_link)
+                if '?' in current_link:
+                    current_link = current_link.split('?')[0] #this needs to be changed
+                    print("This link no longer has parameters ",current_link)       
+            
 
-                if is_valid(current_link) and (in_domain or also_in_domain):
-                    if '#' in current_link:
-                        current_link = current_link.split('#')[0]
-                        print("LINK HAS BEEN DEFRAGGED: ",current_link)
-                    if '?' in current_link:
-                        current_link = current_link.split('?')[0]
-                        print("This link no longer has parameters ",current_link)
+                if is_valid(current_link) and (in_domain or also_in_domain) and current_link not in path_dict:
+                    
                     try:
                         check = requests.get(current_link)                    
-                        if current_link not in path_dict and check.status_code == 200:
+                        if check.status_code == 200:
                             print(current_link)
                             lst.append(current_link)
                             path_dict[current_link] = 1
-  
-                            if '.ics.uci.edu' in result:
-                                if result not in ics_subdomain_dict:
-                                    ics_subdomain_dict[result] = 1 # so far there has been one occurance of it
+
+                            no_path = current_link.rsplit('/') #grabs 'https://mswe.ics.uci.edu' from 'https://mswe.ics.uci.edu/faq/' for ics dict
+                            no_path = ['/'.join(no_path[0:3])][0]
+
+                            if '.ics.uci.edu' in no_path:
+                                if no_path not in ics_subdomain_dict:
+                                    ics_subdomain_dict[no_path] = 1 
                                 else:       
-                                    ics_subdomain_dict[result] += 1                                 
+                                    ics_subdomain_dict[no_path] += 1                                 
             
 
                     except requests.ConnectionError:
                         print(current_link, " is not a valid website.")
-                            
+                       
     print(sum(average)/len(average))
     print("LONGEST PAGE: ",longest_page)
     return lst
