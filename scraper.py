@@ -40,7 +40,27 @@ def scraper(url, resp):
     return [link for link in links if is_valid(link)]
 
 
-
+def validate(url):
+    try:
+        if url[-1] == '/':
+            url = url.rstrip('/')
+        date_text = url.rsplit('/')[-1]
+        if date_text != datetime.strptime(date_text, "%Y-%m-%d").strftime('%Y-%m-%d'):
+            raise ValueError
+        return True
+    except ValueError:
+        return False
+def validate2(url):
+    try:
+        if url[-1] == '/':
+            url = url.rstrip('/')
+        date_text = url.rsplit('/')[-1]
+        if date_text != datetime.strptime(date_text, "%Y-%m").strftime('%Y-%m'):
+           raise ValueError
+        return True
+    except ValueError:
+        return False 
+    
 def extract_next_links(url, resp):
     lst = []
     global longest_page
@@ -83,30 +103,27 @@ def extract_next_links(url, resp):
                     current_link = current_link.split('?')[0] #this needs to be changed
                     print("This link no longer has parameters ",current_link)       
             
+                print(current_link)
+                if  (in_domain or also_in_domain) and is_valid(current_link) and current_link not in path_dict:
+    
+                    print(current_link)
+                    lst.append(current_link)
+                    path_dict[current_link] = 1
 
-                if is_valid(current_link) and (in_domain or also_in_domain) and current_link not in path_dict:
-                    
-                    try:
-                        check = requests.get(current_link)                    
-                        if check.status_code == 200:
-                            print(current_link)
-                            lst.append(current_link)
-                            path_dict[current_link] = 1
+                    no_path = current_link.rsplit('/') #grabs 'https://mswe.ics.uci.edu' from 'https://mswe.ics.uci.edu/faq/' for ics dict
+                    no_path = 'http:/' + ['/'.join(no_path[1:3])][0]
 
-                            no_path = current_link.rsplit('/') #grabs 'https://mswe.ics.uci.edu' from 'https://mswe.ics.uci.edu/faq/' for ics dict
-                            no_path = 'http:/' + ['/'.join(no_path[1:3])][0]
-
-                            if '.ics.uci.edu' in no_path:
-                                if no_path not in ics_subdomain_dict:
-                                    ics_subdomain_dict[no_path] = 1 
-                                else:       
-                                    ics_subdomain_dict[no_path] += 1                                 
+                    if '.ics.uci.edu' in no_path:
+                        if no_path not in ics_subdomain_dict:
+                            ics_subdomain_dict[no_path] = 1 
+                        else:       
+                            ics_subdomain_dict[no_path] += 1                                 
             
 
-                    except requests.ConnectionError:
-                        print(current_link, " is not a valid website.")
-)                
-    print(sum(average)/len(average))
+
+    
+    print("ICS DICT: ", ics_subdomain_dict)                
+    #print(sum(average)/len(average))
     print("LONGEST PAGE: ",longest_page)
     return lst
 
@@ -114,10 +131,21 @@ def is_valid(url):
 
     try:
         parsed = urlparse(url)
+        check = requests.get(url)
+        content_type = check.headers.get('content-type')
         if parsed.scheme not in set(["http", "https"]):
             return False
         if 'calendar' in url: #here for now just to get rid of obvious cases but want to change
-            return False                       
+            return False
+        if validate(url):  
+            return False
+        if validate2(url):  
+            return False
+        if check.status_code != 200:
+            return False
+        if 'pdf' in content_type: #make then apply to more types that are getting in there
+            return False
+        #if \event\ is in there don't search
 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
@@ -128,7 +156,12 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+    except requests.ConnectionError:
+        print(current_link, " is not a valid website.")
+    except requests.exceptions.InvalidURL:
+        print(current_link, " is not a valid website: no host specified.")
 
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
