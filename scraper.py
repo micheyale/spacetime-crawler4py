@@ -6,15 +6,15 @@ from bs4 import BeautifulSoup
 from bs4.element import Comment
 import urllib.request
 import tokenizer
+from datetime import datetime
 
 path_dict = {}
 ics_subdomain_dict = dict()
 common_word = {}
 tokenDict = {}
-trap_url = []
+longest_page = ("",0)
 
-
-
+average = []
 
 def tag_visible(element):
     if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
@@ -23,14 +23,11 @@ def tag_visible(element):
         return False
     return True
 
-
 def text_from_html(body):
     soup = BeautifulSoup(body, 'html.parser')
     texts = soup.findAll(text=True)
     visible_texts = filter(tag_visible, texts)  
     return u" ".join(t.strip() for t in visible_texts)
-
-
 
 def scraper(url, resp):
 
@@ -39,90 +36,77 @@ def scraper(url, resp):
 
 def extract_next_links(url, resp):
     lst = []
-    check_trap = []
-    
+    global longest_page
+    global tokenDict
     if resp.status == 200:
         html = urllib.request.urlopen(url).read()
         bodyText = text_from_html(html)
         tokenizer.updateTokenCounts(tokenDict, bodyText)
-
+        
         page = requests.get(url,auth=('user', 'pass'))
         bSoup = BeautifulSoup(page.content,'html.parser')
         links_lst = bSoup.find_all('a')
         parsed_uri = urlparse(url)
         result = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
         
-
+        word_count = sum(tokenDict[d] for d in tokenDict if d.isalpha())
+        print("WORD COUNT: ",word_count)
+        if word_count > longest_page[1]:
+            longest_page = (url,word_count)
+        average.append(word_count)
+        tokenDict = {}
         for link in links_lst:
         
             if 'href' in link.attrs:
                 missing_domain_check = result + link.attrs['href']
-                
-                    
-                
+                         
                 in_domain = re.search('https?://([a-z0-9]+[.])*uci[.]edu((\/\w+)*\/)?',link.attrs['href'])
                 also_in_domain = re.search('https?://([a-z0-9]+[.])*uci[.]edu((\/\w+)*\/)?',missing_domain_check)
                 current_link = link.attrs['href']
-
-                if also_in_domain and not in_domain:
-                    if link.attrs['href'][0] == '/':
-                        current_link = missing_domain_check
-        
                 
-                if in_domain or also_in_domain and is_valid(current_link) and current_link.rsplit('/',1)[0] in trap_url:
-                    
-                       
+                if also_in_domain and not in_domain:
+                    if len(link.attrs['href']) >= 1 and link.attrs['href'][0] == '/':
+                        current_link = missing_domain_check
+                    else:
+                        also_in_domain = False           
+
+                if is_valid(current_link) and (in_domain or also_in_domain):
                     if '#' in current_link:
                         current_link = current_link.split('#')[0]
                         print("LINK HAS BEEN DEFRAGGED: ",current_link)
+                    if '?' in current_link:
+                        current_link = current_link.split('?')[0]
+                        print("This link no longer has parameters ",current_link)
                     try:
                         check = requests.get(current_link)                    
                         if current_link not in path_dict and check.status_code == 200:
                             print(current_link)
                             lst.append(current_link)
                             path_dict[current_link] = 1
-                            
-                            ct = current_link.rsplit('/',1)
-
-                            if ct[-1].isdigit():
-                                check_trap.append(ct[-1])
-                                if len(check_trap) == 2 and abs(int(check_trap[0]) - int(check_trap[1])) == 1:
-                                    trap_url.append(ct[0])
-                                    check_trap = []
-                                    
-                                elif len(check_trap) == 2 and abs(int(check_trap[0]) - int(check_trap[1])) != 1:
-                                    check_trap = []  
-                            else:
-                                check_trap = []
-
-                            if '.ics.uci.edu' in result and result not in ics_subdomain_dict:
-                                ics_subdomain_dict[result] = 1 # so far there has been one occurance of it
-                                       
-                            elif '.ics.uci.edu' in result and result in ics_subdomain_dict: # it is in there so we need to figure out if we have to increment its page
-                                ics_subdomain_dict[result] += 1                                 
+  
+                            if '.ics.uci.edu' in result:
+                                if result not in ics_subdomain_dict:
+                                    ics_subdomain_dict[result] = 1 # so far there has been one occurance of it
+                                else:       
+                                    ics_subdomain_dict[result] += 1                                 
             
 
                     except requests.ConnectionError:
                         print(current_link, " is not a valid website.")
                             
-
+    print(sum(average)/len(average))
+    print("LONGEST PAGE: ",longest_page)
     return lst
-def web_exists(url): 
-    check = validators.url(url)
-    if(check == False):
-        return False;
-    else:
-        return True;
 
-    
 def is_valid(url):
 
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        if not web_exists(url):
-            return False
+        if 'calendar' in url: #here for now just to get rid of obvious cases but want to change
+            return False                       
+
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
