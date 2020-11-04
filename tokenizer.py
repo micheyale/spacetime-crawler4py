@@ -4,7 +4,7 @@ import sys
 import re
 
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+#from nltk.tokenize import word_tokenize
 
 # runtime: linear O(n) where n is number of tokens in a text file
 # description:	each line of a file is grabbed then iterated over,
@@ -55,7 +55,5 @@ def updateStopWords(tokenDict: dict):
         del tokenDict[i]
     return tokenDict
     
-if __name__ == "__main__":
-    sample_dict = {"mahsa":4, "Hello":3}
-    updateStopWords(sample_dict)
+
 
