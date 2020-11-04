@@ -50,7 +50,6 @@ def updateTokenCounts(tokenDict: dict, bodyText: str):
 
 def updateStopWords(tokenDict: dict):
     stop_words = set(stopwords.words('english'))
-    print(stop_words)
     for i in stop_words:
         del tokenDict[i]
     return tokenDict
