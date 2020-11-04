@@ -24,13 +24,9 @@ def tag_visible(element):
         return False
     return True
 
-<<<<<<< HEAD
-def text_from_html(body, soup):
-=======
 
 def text_from_html(body):
     soup = BeautifulSoup(body, 'html.parser')
->>>>>>> 278ca15b8a0ec3c2613984446e1c1eb6d5c0e04f
     texts = soup.findAll(text=True)
     visible_texts = filter(tag_visible, texts)  
     return u" ".join(t.strip() for t in visible_texts)
