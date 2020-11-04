@@ -10,7 +10,7 @@ from datetime import datetime
 path_dict = {}
 ics_subdomain_dict = dict()
 common_word = {}
-
+word_frequencies = dict()
 longest_page = ("",0)
 
 #THIS ERROR NEEDS TO BE ACCOUNTED FOR
@@ -31,13 +31,21 @@ def text_from_html(body):
     visible_texts = filter(tag_visible, texts)  
     return u" ".join(t.strip() for t in visible_texts)
 
+def top50Word():
+    # Sorting word_frequencies by values in descending order 
+    # (Might want to sort this after finishing crawling to improve efficiency)
+    # After Sorting, take the first 50 key-value pairs(Needs to be implemented)
+    word_frequencies_list = sorted(word_frequencies.items(), key=lambda x: x[1], reverse=True)
 
+    #Printing out word_frequencies dictionary
+    print("Top 50 Word_frequencies: ")
+    print(word_frequencies_list[:50])
+    return 0
 
 def scraper(url, resp):
-
     links = extract_next_links(url, resp)
+    # top50Word()                               #Giving Spacetime error when calling this function
     return [link for link in links if is_valid(link)]
-
 
 def validate(url):
     try:
@@ -64,10 +72,10 @@ def extract_next_links(url, resp):
     lst = []
     tokenDict = {}
     global longest_page
-    global word_frequencies 
-    word_frequencies = {}
+    global checksum_dict
+    checksum_dict = {}
     if resp.status == 200:
-        html = urllib.request.urlopen(url).read()
+        html = urllib.request.urlopen(url).read() #delete and try passing resp.raw_response.text into soup directly
         bodyText = text_from_html(html)
         tokenizer.updateTokenCounts(tokenDict, bodyText)
         #print(str(tokenDict["department"]))
@@ -90,54 +98,44 @@ def extract_next_links(url, resp):
                 word_frequencies[key] += value
             else:
                 word_frequencies[key] = value
-        
-        # Sorting word_frequencies by values in descending order (Might want to sort this after finishing crawling to improve efficiency)
-        # After Sorting, take the first 50 key-value pairs(Needs to be implemented)
-        word_frequencies = sorted(word_frequencies.items(), key=lambda x: x[1], reverse=True)
 
-        #Printing out word_frequencies dictionary
-        print("Word_frequencies: ")
-        for key, value in word_frequencies.items():
-            print(key, value)
+        if word_count > 150:
+            for link in links_lst:
+                if 'href' in link.attrs:
+                    current_link = link.attrs['href']
+                    if len(link.attrs['href']) >= 1 and link.attrs['href'][0] == '/': #adding the parent domain to keys that only equal the path
+                        print("ONLY PATH: ",link.attrs['href'])
+                        missing_domain_check = result + link.attrs['href']
+                        current_link = missing_domain_check
+                    
+                    in_domain = re.search('https?://([a-z0-9]+[.])*uci[.]edu((\/\w+)*\/)?',current_link)
+                    also_in_domain = re.search('https?://([a-z0-9]+[.])*uci[.]edu((\/\w+)*\/)?',current_link)
+                                    
 
-        
-        for link in links_lst:
-            
-            if 'href' in link.attrs:
-                current_link = link.attrs['href']
-                if len(link.attrs['href']) >= 1 and link.attrs['href'][0] == '/': #adding the parent domain to keys that only equal the path
-                    print("ONLY PATH: ",link.attrs['href'])
-                    missing_domain_check = result + link.attrs['href']
-                    current_link = missing_domain_check
+                    if '#' in current_link:
+                        current_link = current_link.split('#')[0]
+                        print("LINK HAS BEEN DEFRAGGED: ",current_link)
+                    #I INITIALLY HAD THIS TO AVOID A TRAP BUT I DON'T THINK WE'RE GETTING STUCK IN IT NOW
+                    #if '?' in current_link:
+                    #    current_link = current_link.split('?')[0] #this needs to be changed
+                    #    print("This link no longer has parameters ",current_link)
                 
-                in_domain = re.search('https?://([a-z0-9]+[.])*uci[.]edu((\/\w+)*\/)?',current_link)
-                also_in_domain = re.search('https?://([a-z0-9]+[.])*uci[.]edu((\/\w+)*\/)?',current_link)
-                                
+                    #PATH_DICT NEEDS TO UNIFORMLY BE ADDING HTTP:// TO ALL LINK SO WE DON'T GET TWO VERSION OF THE SAME LINK           tentative value
+                    if (in_domain or also_in_domain) and is_valid(current_link) and current_link not in path_dict:
+        
+                        print(current_link)
+                        lst.append(current_link)
+                        path_dict[current_link] = 1
 
-                if '#' in current_link:
-                    current_link = current_link.split('#')[0]
-                    print("LINK HAS BEEN DEFRAGGED: ",current_link)
-                #I INITIALLY HAD THIS TO AVOID A TRAP BUT I DON'T THINK WE'RE GETTING STUCK IN IT NOW
-                #if '?' in current_link:
-                #    current_link = current_link.split('?')[0] #this needs to be changed
-                #    print("This link no longer has parameters ",current_link)
-            
-                #PATH_DICT NEEDS TO UNIFORMLY BE ADDING HTTP:// TO ALL LINK SO WE DON'T GET TWO VERSION OF THE SAME LINK           tentative value
-                if (in_domain or also_in_domain) and is_valid(current_link) and current_link not in path_dict and word_count > 150:
-    
-                    print(current_link)
-                    lst.append(current_link)
-                    path_dict[current_link] = 1
+                        no_path = current_link.rsplit('/') #grabs 'https://mswe.ics.uci.edu' from 'https://mswe.ics.uci.edu/faq/' for ics dict
+                        no_path = 'http:/' + ['/'.join(no_path[1:3])][0]
 
-                    no_path = current_link.rsplit('/') #grabs 'https://mswe.ics.uci.edu' from 'https://mswe.ics.uci.edu/faq/' for ics dict
-                    no_path = 'http:/' + ['/'.join(no_path[1:3])][0]
-
-                    if '.ics.uci.edu' in no_path:
-                        if no_path not in ics_subdomain_dict:
-                            ics_subdomain_dict[no_path] = 1 
-                        else:       
-                            ics_subdomain_dict[no_path] += 1                                 
-            
+                        if '.ics.uci.edu' in no_path:
+                            if no_path not in ics_subdomain_dict:
+                                ics_subdomain_dict[no_path] = 1 
+                            else:       
+                                ics_subdomain_dict[no_path] += 1                                 
+                
 
     
     print("ICS DICT: ", ics_subdomain_dict)                
