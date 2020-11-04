@@ -12,7 +12,6 @@ ics_subdomain_dict = dict()
 common_word = {}
 
 longest_page = ("",0)
-word_frequencies = {}
 
 #THIS ERROR NEEDS TO BE ACCOUNTED FOR
 #https://password.ics.uci.edu
@@ -65,6 +64,8 @@ def extract_next_links(url, resp):
     lst = []
     tokenDict = {}
     global longest_page
+    global word_frequencies 
+    word_frequencies = {}
     if resp.status == 200:
         html = urllib.request.urlopen(url).read()
         bodyText = text_from_html(html)
