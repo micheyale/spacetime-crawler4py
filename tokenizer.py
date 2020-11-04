@@ -2,7 +2,6 @@
 
 import sys
 import re
-
 from nltk.corpus import stopwords
 #from nltk.tokenize import word_tokenize
 
@@ -43,16 +42,22 @@ def printFreqs(freqs: dict) -> None:
 #				sort and print frequency list. bound by printFreqs()
 def updateTokenCounts(tokenDict: dict, bodyText: str):
     tokens = getTokens(bodyText)
-    updated_tokens = updateStopWords(tokens)
+    updated_tokens = updateStopWords(tokenDict)
     freqs = computeWordFrequencies(tokenDict, updated_tokens)
 
 
 def updateStopWords(tokenDict: dict):
     stop_words = set(stopwords.words('english'))
-
+    #print(stop_words)
+    #print(tokenDict)
     for i in stop_words:
-        del tokenDict[i]
-
+        try:
+            del tokenDict[i]
+        except (KeyError):
+            continue
+    
+    #print(tokenDict)
+        
     return tokenDict
     
 
