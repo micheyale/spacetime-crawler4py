@@ -12,6 +12,7 @@ ics_subdomain_dict = dict()
 common_word = {}
 
 longest_page = ("",0)
+word_frequencies = {}
 
 #THIS ERROR NEEDS TO BE ACCOUNTED FOR
 #https://password.ics.uci.edu
@@ -65,8 +66,8 @@ def extract_next_links(url, resp):
     tokenDict = {}
     global longest_page
     if resp.status == 200:
-        soup = BeautifulSoup(resp.raw_response.text,'html.parser')
-        bodyText = text_from_html(resp.raw_response.text, soup)
+        html = urllib.request.urlopen(url).read()
+        bodyText = text_from_html(html)
         tokenizer.updateTokenCounts(tokenDict, bodyText)
         #print(str(tokenDict["department"]))
 
@@ -80,7 +81,24 @@ def extract_next_links(url, resp):
         print("WORD COUNT: ",word_count)
         if word_count > longest_page[1]:
             longest_page = (url,word_count)
-        average.append(word_count)
+        # average.append(word_count)
+
+        # Update word_frequencies with the new tokenDict from each page
+        for key, value in tokenDict.items():
+            if key in word_frequencies:
+                word_frequencies[key] += value
+            else:
+                word_frequencies[key] = value
+        
+        # Sorting word_frequencies by values in descending order (Might want to sort this after finishing crawling to improve efficiency)
+        # After Sorting, take the first 50 key-value pairs(Needs to be implemented)
+        word_frequencies = sorted(word_frequencies.items(), key=lambda x: x[1], reverse=True)
+
+        #Printing out word_frequencies dictionary
+        print("Word_frequencies: ")
+        for key, value in word_frequencies.items():
+            print(key, value)
+
         
         for link in links_lst:
             
@@ -104,7 +122,7 @@ def extract_next_links(url, resp):
                 #    print("This link no longer has parameters ",current_link)
             
                 #PATH_DICT NEEDS TO UNIFORMLY BE ADDING HTTP:// TO ALL LINK SO WE DON'T GET TWO VERSION OF THE SAME LINK           tentative value
-                if (in_domain or also_in_domain) and is_valid(current_link) and current_link not in path_dict and if word_count > 150:
+                if (in_domain or also_in_domain) and is_valid(current_link) and current_link not in path_dict and word_count > 150:
     
                     print(current_link)
                     lst.append(current_link)
