@@ -10,10 +10,10 @@ from datetime import datetime
 path_dict = {}
 ics_subdomain_dict = dict()
 common_word = {}
-
+every_link = {}
 longest_page = ("",0)
 word_frequencies = {}
- 
+low_count = [] 
 
 def tag_visible(element):
     if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
@@ -63,13 +63,18 @@ def in_domain(url):
         if i in url:
             return True
     return False
+def low_content_link(url):
+    for l in low_count:
+        if l in url:
+            return True
+    return False
 def extract_next_links(url, resp):
     lst = []
     tokenDict = {}
     global longest_page
     global word_frequencies
 
-    if resp.status == 200:
+    if resp.status == 200 and not low_content_link(url):
 
         html = urllib.request.urlopen(url).read()
         bodyText = text_from_html(html)
@@ -109,7 +114,7 @@ def extract_next_links(url, resp):
                 else:       
                     ics_subdomain_dict[no_path] += 1 #increments the occurance of the ic subdomain that has appeared at least once
             for link in links_lst:
-                
+ 
                 if 'href' in link.attrs:
                     current_link = link.attrs['href']
                     if len(link.attrs['href']) >= 1 and link.attrs['href'][0] == '/': #adding the parent domain to keys that only equal the path
@@ -124,7 +129,8 @@ def extract_next_links(url, resp):
 
                     http_adder = current_link.rsplit('/') 
                     current_link = 'http:/' + ['/'.join(http_adder[1:])][0] #uniformly adds http:/ to every link so we don't mistakening double count
-                    if in_domain(current_link) and is_valid(current_link) and current_link not in path_dict:
+                    if in_domain(current_link) and is_valid(current_link) and current_link not in path_dict and current_link not in every_link:
+                        every_link[current_link] = 1
                         print("links we are adding",current_link)
                         lst.append(current_link)
                                              
@@ -132,6 +138,10 @@ def extract_next_links(url, resp):
         
     print("ICS DICT: ", ics_subdomain_dict)                
     print("LONGEST PAGE: ",longest_page)
+    if len(lst) < 5:
+        if '?' in url:
+            url = url.split('?')[0] #this needs to be changed
+            low_count.append(url)
     return lst
 
 def is_valid(url):
