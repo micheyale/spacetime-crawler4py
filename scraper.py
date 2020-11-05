@@ -101,7 +101,10 @@ def extract_next_links(url, resp):
             for link in links_lst:
                 if 'href' in link.attrs:
                     current_link = link.attrs['href']
-                    if len(link.attrs['href']) >= 1 and link.attrs['href'][0] == '/': #adding the parent domain to keys that only equal the path
+                    # added checks on links starting with //www
+                    if '//www' in link.attrs['href'] and link.attrs['href'][0] == '/':
+                        current_link = 'https:' + current_link
+                    elif len(link.attrs['href']) >= 1 and link.attrs['href'][0] == '/': #adding the parent domain to keys that only equal the path
                         print("ONLY PATH: ",link.attrs['href'])
                         missing_domain_check = result + link.attrs['href']
                         current_link = missing_domain_check
