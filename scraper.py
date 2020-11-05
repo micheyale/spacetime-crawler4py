@@ -75,10 +75,10 @@ def extract_next_links(url, resp):
     global word_frequencies
 
     if resp.status == 200 and not low_content_link(url) and url not in path_dict:
-
-        soup = BeautifulSoup(resp.raw_response.text,'html.parser')
-        bodyText = text_from_html(resp.raw_response.text, soup)
-        links_lst = soup.find_all('a')
+	
+        html = urllib.request.urlopen(url).read()	  
+        bodyText = text_from_html(html)	       
+        tokenizer.updateTokenCounts(tokenDict, bodyText)
 
         page = requests.get(url,auth=('user', 'pass'))
         bSoup = BeautifulSoup(page.content,'html.parser')
