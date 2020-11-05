@@ -176,4 +176,4 @@ def printUniqueUrlCount(count):
     print("Number of unique URLs found: " + str(count))
 
 def subdomainCount(icsSubs):
-    print("Number of ICS subdomains: " + len(1))
+    print("Number of ICS subdomains: " + len(icsSubs))
