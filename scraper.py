@@ -28,21 +28,21 @@ def text_from_html(body):
     visible_texts = filter(tag_visible, texts)  
     return u" ".join(t.strip() for t in visible_texts)
 
-
-def top50Word():
+#WE ARE USING printTopTokens(tokenDict) INSTEAD
+#def top50Word():
     # Sorting word_frequencies by values in descending order 
     # (Might want to sort this after finishing crawling to improve efficiency)
     # After Sorting, take the first 50 key-value pairs(Needs to be implemented)
-    word_frequencies_list = sorted(word_frequencies.items(), key=lambda x: x[1], reverse=True)
+#    word_frequencies_list = sorted(word_frequencies.items(), key=lambda x: x[1], reverse=True)
 
     #Printing out word_frequencies dictionary
-    print("Top 50 Word_frequencies: ")
-    print(word_frequencies_list[:50])
-    return 0
+#    print("Top 50 Word_frequencies: ")
+#    print(word_frequencies_list[:50])
+#    return 0
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
-    # top50Word()                               #Giving Spacetime error when calling this function
+    # top50Word()                               
     return [link for link in links if is_valid(link)]
 
 def validate(url):
@@ -189,3 +189,32 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+    except TypeError:
+        print ("TypeError for ", parsed)
+        raise
+
+def printTopTokens(tokenDict):
+
+    sortedList = sorted(tokenDict.items(), key=lambda x: x[1], reverse=True)
+
+    count = 0
+    for entry in sortedList:
+        if count >= 50:
+            break
+
+        print(entry[0] + " = " + str(entry[1]))
+        count += 1
+
+def printLongest(url):
+    print("The URL with the most text was: " + str(url[0]))
+    print("The total length of this page is: " + str(url[1]))
+
+def printUniqueUrlCount(count):
+    print("Number of unique URLs found: " + str(count))
+
+def subdomainCount(icsSubs):
+    if 'https://www.ics.uci.edu' in ics_uci_subdomain:
+        del ics_uci_subdomain['https://www.ics.uci.edu']
+    print("ICS subdomains: " ,sorted((key,value) for key,value in ics_uci_subdomain.items()))
+
