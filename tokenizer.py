@@ -26,6 +26,7 @@ def computeWordFrequencies(tokenDict: dict, tokens: list) -> dict:
             tokenDict[t] = 0
 	
         tokenDict[t] += 1
+    updateStopWords(tokenDict)
     return tokenDict
 
 # runtime: log-linear O(n*log(n)) where n is number of dict keys
@@ -42,22 +43,17 @@ def printFreqs(freqs: dict) -> None:
 #				sort and print frequency list. bound by printFreqs()
 def updateTokenCounts(tokenDict: dict, bodyText: str):
     tokens = getTokens(bodyText)
-    updated_tokens = updateStopWords(tokenDict)
-    freqs = computeWordFrequencies(tokenDict, updated_tokens)
+    freqs = computeWordFrequencies(tokenDict, tokens)
 
 
 def updateStopWords(tokenDict: dict):
     stop_words = set(stopwords.words('english'))
     #print(stop_words)
-    #print(tokenDict)
     for i in stop_words:
         try:
             del tokenDict[i]
         except (KeyError):
             continue
-    
-    #print(tokenDict)
-        
     return tokenDict
     
 
