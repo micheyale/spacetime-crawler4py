@@ -8,11 +8,14 @@ import urllib.request
 import tokenizer
 import nltk
 from nltk.corpus import stopwords
+from datetime import datetime
 
 domain_set = set() # len of set would be the answer
 path_dict = {}
 ics_subdomain_dict = dict()
 tokenDict = {}
+longestLength = 0
+longestUrl = ""
 
 def tag_visible(element):
     if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
@@ -32,12 +35,19 @@ def scraper(url, resp):
 
 def extract_next_links(url, resp):
     extractedLinks = []
+    global longestLength
+    global longestUrl
 
     if resp.status == 200:
         soup = BeautifulSoup(resp.raw_response.text,'html.parser')
+
         bodyText = text_from_html(resp.raw_response.text, soup)
+        bodyLength = len(bodyText)
+        if bodyLength > longestLength:
+            longestLength = bodyLength
+            longestUrl = url
+
         tokenizer.updateTokenCounts(tokenDict, bodyText)
-        #print(bodyText)
 
         allTags = soup.find_all('a')
 
@@ -45,6 +55,7 @@ def extract_next_links(url, resp):
             if 'href'in tag.attrs and 'uci.edu' in tag.attrs['href']:
 
                 extractedLink = tag.attrs['href']
+                extractedLink = extractedLink.split('#')[0]
                 extractedLinks.append(extractedLink)
 
     #print("SUBDOMAINS: " + str(ics_subdomain_dict))
@@ -52,10 +63,44 @@ def extract_next_links(url, resp):
     #print(" ")
     return extractedLinks
 
+def validate(url):
+    try:
+        if url[-1] == '/':
+            url = url.rstrip('/')
+        date_text = url.rsplit('/')[-1]
+        if date_text != datetime.strptime(date_text, "%Y-%m-%d").strftime('%Y-%m-%d'):
+            raise ValueError
+        return True
+    except ValueError:
+        return False
+
+def validate2(url):
+    try:
+        if url[-1] == '/':
+            url = url.rstrip('/')
+        date_text = url.rsplit('/')[-1]
+        if date_text != datetime.strptime(date_text, "%Y-%m").strftime('%Y-%m'):
+           raise ValueError
+        return True
+    except ValueError:
+        return False
+
 def is_valid(url):
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
+            return False
+
+        if "/pdf/" in url:
+            return False
+
+        if validate(url):  #returns False for URLs that end in /year-month-day
+            return False
+
+        if validate2(url): #returns False for URLs that end in /year-month
+            return False
+
+        if url.rsplit('?')[1:] and 'share' in url.rsplit('?')[1:][0]: #returns False for URLs like: 'http://wics.ics.uci.edu/?share=twitter
             return False
 
         return not re.match(
@@ -88,3 +133,6 @@ def printTopTokens(tokenDict):
 
         print(entry[0] + " = " + str(entry[1]))
         count += 1
+
+def printLongest(url):
+    print("The URL with the most text was: " + url)
