@@ -72,7 +72,6 @@ def extract_next_links(url, resp):
     global longest_page
     global checksum_dict
     checksum_dict = {}
-    print(resp.raw_response.content)
     if resp.status == 200:
         #parsing with beautifulSoup
         soup = BeautifulSoup(resp.raw_response.text,'html.parser')
