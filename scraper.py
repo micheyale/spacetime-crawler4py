@@ -28,6 +28,7 @@ def text_from_html(body):
     visible_texts = filter(tag_visible, texts)  
     return u" ".join(t.strip() for t in visible_texts)
 
+
 def top50Word():
     # Sorting word_frequencies by values in descending order 
     # (Might want to sort this after finishing crawling to improve efficiency)
@@ -83,15 +84,17 @@ def extract_next_links(url, resp):
     global word_frequencies
 
     if resp.status == 200 and not low_content_link(url) and url not in path_dict:
-	
-        html = urllib.request.urlopen(url).read()	  
-        bodyText = text_from_html(html)	       
-        tokenizer.updateTokenCounts(tokenDict, bodyText)
-
+        try:
+            html = urllib.request.urlopen(url).read()	  
+            bodyText = text_from_html(html)	       
+            tokenizer.updateTokenCounts(tokenDict, bodyText)
+        except urllib.error.HTTPError:
+            print("This URL: " + str(url) + " cannot be scraped for content.")
+            return lst
         page = requests.get(url,auth=('user', 'pass'))
         bSoup = BeautifulSoup(page.content,'html.parser')
         links_lst = bSoup.find_all('a') #puts all hyperlinks in a lst
-
+        
         parsed_uri = urlparse(url)
         result = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri) #this allows us to keep track of a out parent domain in case we need to reconnect the path
 
@@ -183,6 +186,9 @@ def is_valid(url):
         print(url, " is not a valid website.")
     except requests.exceptions.InvalidURL:
         print(url, " is not a valid website: no host specified.")
+    except TypeError:
+        print ("TypeError for ", parsed)
+        raise
 
     except TypeError:
         print ("TypeError for ", parsed)
