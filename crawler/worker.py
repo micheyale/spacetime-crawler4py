@@ -21,6 +21,7 @@ class Worker(Thread):
                 scraper.printTopTokens(scraper.tokenDict)
                 scraper.printLongest(scraper.longestUrl)
                 scraper.printUniqueUrlCount(len(scraper.foundUrls))
+                scraper.subdomainCount(len(scraper.ics_subdomain_dict))
                 break
             resp = download(tbd_url, self.config, self.logger)
             self.logger.info(
