@@ -49,6 +49,7 @@ def extract_next_links(url, resp):
         if bodyLength <= 150:
             return extractedLinks
 
+        foundUrls.add(url)
         if bodyLength > longestLength:
             longestLength = bodyLength
             longestUrl = url
@@ -73,11 +74,7 @@ def extract_next_links(url, resp):
                 extractedLink = extractedLink.split('#')[0]
                 if extractedLink not in foundUrls and in_domain(extractedLink):
                     extractedLinks.append(extractedLink)
-                    foundUrls.add(extractedLink)
 
-    #print("SUBDOMAINS: " + str(ics_subdomain_dict))
-    #print(str(tokenDict))
-    #print(" ")
     return extractedLinks
 
 def validate(url):
