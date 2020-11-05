@@ -16,6 +16,7 @@ ics_subdomain_dict = dict()
 tokenDict = {}
 longestLength = 0
 longestUrl = ""
+foundUrls = set()
 
 def tag_visible(element):
     if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
@@ -42,7 +43,12 @@ def extract_next_links(url, resp):
         soup = BeautifulSoup(resp.raw_response.text,'html.parser')
 
         bodyText = text_from_html(resp.raw_response.text, soup)
+        bodyText = removeStopwordsFromBodytext(bodyText)
         bodyLength = len(bodyText)
+
+        if bodyLength <= 150:
+            return extractedLinks
+
         if bodyLength > longestLength:
             longestLength = bodyLength
             longestUrl = url
@@ -56,7 +62,9 @@ def extract_next_links(url, resp):
 
                 extractedLink = tag.attrs['href']
                 extractedLink = extractedLink.split('#')[0]
-                extractedLinks.append(extractedLink)
+                if extractedLink not in foundUrls:
+                    extractedLinks.append(extractedLink)
+                    foundUrls.add(extractedLink)
 
     #print("SUBDOMAINS: " + str(ics_subdomain_dict))
     #print(str(tokenDict))
@@ -117,6 +125,14 @@ def is_valid(url):
         print ("TypeError for ", parsed)
         raise
 
+def removeStopwordsFromBodytext(bodyText):
+    stopwordList = {"ourselves", "hers", "between", "yourself", "but", "again", "there", "about", "once", "during", "out", "very", "having", "with", "they", "own", "an", "be", "some", "for", "do", "its", "yours", "such", "into", "of", "most", "itself", "other", "off", "is", "s", "am", "or", "who", "as", "from", "him", "each", "the", "themselves", "until", "below", "are", "we", "these", "your", "his", "through", "don", "nor", "me", "were", "her", "more", "himself", "this", "down", "should", "our", "their", "while", "above", "both", "up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", "before", "them", "same", "and", "been", "have", "in", "will", "on", "does", "yourselves", "then", "that", "because", "what", "over", "why", "so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", "just", "where", "too", "only", "myself", "which", "those", "i", "after", "few", "whom", "t", "being", "if", "theirs", "my", "against", "a", "by", "doing", "it", "how", "further", "was", "here", "than"}
+
+    for word in stopwordList:
+        bodyText = bodyText.replace(word, "")
+
+    return bodyText
+
 def printTopTokens(tokenDict):
     stopwordList = {"ourselves", "hers", "between", "yourself", "but", "again", "there", "about", "once", "during", "out", "very", "having", "with", "they", "own", "an", "be", "some", "for", "do", "its", "yours", "such", "into", "of", "most", "itself", "other", "off", "is", "s", "am", "or", "who", "as", "from", "him", "each", "the", "themselves", "until", "below", "are", "we", "these", "your", "his", "through", "don", "nor", "me", "were", "her", "more", "himself", "this", "down", "should", "our", "their", "while", "above", "both", "up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", "before", "them", "same", "and", "been", "have", "in", "will", "on", "does", "yourselves", "then", "that", "because", "what", "over", "why", "so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", "just", "where", "too", "only", "myself", "which", "those", "i", "after", "few", "whom", "t", "being", "if", "theirs", "my", "against", "a", "by", "doing", "it", "how", "further", "was", "here", "than"}
 
@@ -136,3 +152,6 @@ def printTopTokens(tokenDict):
 
 def printLongest(url):
     print("The URL with the most text was: " + url)
+
+def printUniqueUrlCount(count):
+    print("Number of unique URLs found: " + str(count))

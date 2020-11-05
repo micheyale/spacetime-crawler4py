@@ -20,6 +20,7 @@ class Worker(Thread):
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 scraper.printTopTokens(scraper.tokenDict)
                 scraper.printLongest(scraper.longestUrl)
+                scraper.printUniqueUrlCount(len(scraper.foundUrls))
                 break
             resp = download(tbd_url, self.config, self.logger)
             self.logger.info(
