@@ -24,11 +24,9 @@ def tag_visible(element):
         return False
     return True
 
-
-def text_from_html(body):
-    soup = BeautifulSoup(body, 'html.parser')
+def text_from_html(body, soup):
     texts = soup.findAll(text=True)
-    visible_texts = filter(tag_visible, texts)  
+    visible_texts = filter(tag_visible, texts)
     return u" ".join(t.strip() for t in visible_texts)
 
 def top50Word():
@@ -74,15 +72,16 @@ def extract_next_links(url, resp):
     global longest_page
     global checksum_dict
     checksum_dict = {}
+    print(resp.raw_response.content)
     if resp.status == 200:
-        html = urllib.request.urlopen(url).read() #delete and try passing resp.raw_response.text into soup directly
-        bodyText = text_from_html(html)
+        #parsing with beautifulSoup
+        soup = BeautifulSoup(resp.raw_response.text,'html.parser')
+        bodyText = text_from_html(resp.raw_response.text, soup)
+        links_lst = soup.find_all('a')
+        
+        #tokenizing
         tokenizer.updateTokenCounts(tokenDict, bodyText)
-        #print(str(tokenDict["department"]))
-
-        page = requests.get(url,auth=('user', 'pass'))
-        bSoup = BeautifulSoup(page.content,'html.parser')
-        links_lst = bSoup.find_all('a')
+        
         parsed_uri = urlparse(url)
         result = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
 
