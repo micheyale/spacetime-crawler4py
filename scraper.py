@@ -6,6 +6,8 @@ from bs4 import BeautifulSoup
 from bs4.element import Comment
 import urllib.request
 import tokenizer
+import nltk
+from nltk.corpus import stopwords
 
 domain_set = set() # len of set would be the answer
 path_dict = {}
@@ -35,7 +37,7 @@ def extract_next_links(url, resp):
         soup = BeautifulSoup(resp.raw_response.text,'html.parser')
         bodyText = text_from_html(resp.raw_response.text, soup)
         tokenizer.updateTokenCounts(tokenDict, bodyText)
-        #print(str(tokenDict["department"]))
+        #print(bodyText)
 
         allTags = soup.find_all('a')
 
@@ -46,7 +48,8 @@ def extract_next_links(url, resp):
                 extractedLinks.append(extractedLink)
 
     #print("SUBDOMAINS: " + str(ics_subdomain_dict))
-    print(" ")
+    #print(str(tokenDict))
+    #print(" ")
     return extractedLinks
 
 def is_valid(url):
@@ -63,8 +66,25 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ps.z)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+def printTopTokens(tokenDict):
+    stopwordList = {"ourselves", "hers", "between", "yourself", "but", "again", "there", "about", "once", "during", "out", "very", "having", "with", "they", "own", "an", "be", "some", "for", "do", "its", "yours", "such", "into", "of", "most", "itself", "other", "off", "is", "s", "am", "or", "who", "as", "from", "him", "each", "the", "themselves", "until", "below", "are", "we", "these", "your", "his", "through", "don", "nor", "me", "were", "her", "more", "himself", "this", "down", "should", "our", "their", "while", "above", "both", "up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", "before", "them", "same", "and", "been", "have", "in", "will", "on", "does", "yourselves", "then", "that", "because", "what", "over", "why", "so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", "just", "where", "too", "only", "myself", "which", "those", "i", "after", "few", "whom", "t", "being", "if", "theirs", "my", "against", "a", "by", "doing", "it", "how", "further", "was", "here", "than"}
+
+    for word in stopwordList:
+        if word in tokenDict:
+            tokenDict.pop(word)
+
+    sortedList = sorted(tokenDict.items(), key=lambda x: x[1], reverse=True)
+
+    count = 0
+    for entry in sortedList:
+        if count >= 50:
+            break
+
+        print(entry[0] + " = " + str(entry[1]))
+        count += 1

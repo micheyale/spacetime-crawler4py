@@ -3,7 +3,7 @@
 import sys
 import re
 
-tokenMatch = re.compile("\W+")
+tokenMatch = re.compile("[\s.,!?:;'\"-]+")
 # runtime: linear O(n) where n is number of tokens in a text file
 # description:	each line of a file is grabbed then iterated over,
 #				if token is found it is added to list
@@ -12,7 +12,7 @@ def getTokens(string: str) -> list:
 	cleanLine = tokenMatch.split(string)
 
 	for word in cleanLine:
-		if word.isalnum() == True:
+		if word.replace("'", "").isalnum() == True:
 			tokens.append(word.lower())
 
 	return tokens
