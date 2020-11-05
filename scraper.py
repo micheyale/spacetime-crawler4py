@@ -23,10 +23,9 @@ def tag_visible(element):
     return True
 
 
-def text_from_html(body):
-    soup = BeautifulSoup(body, 'html.parser')
+def text_from_html(body, soup):
     texts = soup.findAll(text=True)
-    visible_texts = filter(tag_visible, texts)  
+    visible_texts = filter(tag_visible, texts)
     return u" ".join(t.strip() for t in visible_texts)
 
 
@@ -63,6 +62,7 @@ def in_domain(url):
         if i in url:
             return True
     return False
+
 def low_content_link(url):
     for l in low_count:
         if l in url:
@@ -74,12 +74,11 @@ def extract_next_links(url, resp):
     global longest_page
     global word_frequencies
 
-    if resp.status == 200 and not low_content_link(url):
+    if resp.status == 200 and not low_content_link(url) and url not in path_dict:
 
-        html = urllib.request.urlopen(url).read()
-        bodyText = text_from_html(html)
-        tokenizer.updateTokenCounts(tokenDict, bodyText)
-
+        soup = BeautifulSoup(resp.raw_response.text,'html.parser')
+        bodyText = text_from_html(resp.raw_response.text, soup)
+        links_lst = soup.find_all('a')
 
         page = requests.get(url,auth=('user', 'pass'))
         bSoup = BeautifulSoup(page.content,'html.parser')
@@ -101,8 +100,8 @@ def extract_next_links(url, resp):
             else:
                 word_frequencies[key] = value
                 
-        if word_count > 150 and url not in path_dict:
-            print("BEGIN PARSING LINKS: ",url)
+        if word_count > 150:
+            print("BEGIN PARSING LINK: ",url)
             path_dict[url] = 1 #we are adding link to path_dict when we begin crawling that webpage NOT when we initially scrape the link
 
             no_path = url.rsplit('/') #grabs 'https://mswe.ics.uci.edu' from 'https://mswe.ics.uci.edu/faq/' for ics dict
