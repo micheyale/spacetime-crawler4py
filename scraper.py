@@ -179,7 +179,7 @@ def is_valid(url):
                 return False         
             if validate2(date_text2):
                 return False
-            if validate1(date_text3):
+            if validate(date_text3):
                 return False
         if url.rsplit('?')[1:] and 'share' in url.rsplit('?')[1:][0]: #returns False for URLs like: 'http://wics.ics.uci.edu/?share=twitter
             return False
